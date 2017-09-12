@@ -52,8 +52,8 @@
     </at-modal>
 
     <h3 class="col-md-24" style="margin-top: 20px;">Stranke</h3>
-    <div class="col-md-24" v-show="tableData.length">
-      <at-table :columns="columns" :data="tableData" :page-size="50" stripe border pagination></at-table>
+    <div class="col-md-24" v-if="customers.length">
+      <at-table :columns="columns" :data="customers" :page-size="50" stripe border pagination></at-table>
     </div>
 
   </div>
@@ -71,9 +71,9 @@
         errorsMessage: '',
         columns: [
           { title: '#', key: 'id' },
-          { title: 'Naziv', key: 'name' },
-          { title: 'Naslov', key: 'address' },
-          { title: 'Mesto', key: 'city' },
+          { title: 'Naziv', key: 'name', sortType: 'normal' },
+          { title: 'Naslov', key: 'address', sortType: 'normal' },
+          { title: 'Mesto', key: 'city', sortType: 'normal' },
           { title: 'Poštna št.', key: 'zip' },
           { title: 'ID ZA DDV', key: 'vat' },
           {
@@ -148,9 +148,7 @@
       onIndex () {
         var self = this
         this.$Loading.start()
-        this.tableData = null
         this.getCustomers().then((res) => {
-          self.tableData = [...res.data]
           self.$Loading.finish()
         }).catch((e) => {
           self.$Message.error('Prišlo je do napake.')
@@ -215,9 +213,6 @@
     computed: {
       getTitle () {
         return this.customer.id ? 'Uredi stranko' : 'Dodaj stranko'
-      },
-      getTableData () {
-        return this.tableData ? this.tableData : []
       },
       ...mapState({
         customers: state => state.customers.customers,

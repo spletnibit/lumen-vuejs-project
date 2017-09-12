@@ -11,6 +11,14 @@ class ProductSeeder extends Seeder
      */
     public function run()
     {
-        factory(App\Product::class, 50)->create();
+      factory(App\ProductCategory::class, 5)->create();
+      
+      factory(App\Product::class, 20)
+        ->create()
+        ->each(function($item) {
+            $model = \App\ProductCategory::inRandomOrder()->first();
+            $item->category()->associate($model);
+            $item->save();
+      });
     }
 }

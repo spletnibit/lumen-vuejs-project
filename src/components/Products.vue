@@ -194,7 +194,7 @@
     methods: {
       onProductCreateOpen () {
         this.modal1 = true
-        this.RESET_PRODUCT()
+        this.resetProduct()
       },
       onProductSave () {
         var self = this
@@ -254,7 +254,7 @@
         'addProduct'
       ]),
       ...mapMutations([
-        'RESET_PRODUCT'
+        'resetProduct'
       ])
     },
     computed: {

@@ -13,27 +13,46 @@
 
 $factory->define(App\User::class, function (Faker\Generator $faker) {
     return [
-        'name' => $faker->name,
-        'email' => $faker->email,
+      'email' => $faker->email,
+      'password' => app('hash')->make('secret')
+    ];
+});
+
+$factory->define(App\Offer::class, function (Faker\Generator $faker) {
+    $customer = \App\Customer::inRandomOrder()->first();
+    return [
+      'customer_id'       => $customer->id,
+      'subtotal'          => 0,
+      'subtotal_discount' => 0,
+      'subtotal_vat'      => 0,
+      'total'             => 0,
     ];
 });
 
 $factory->define(App\Customer::class, function (Faker\Generator $faker) {
-    $faker->addProvider('sl_SI');
+    $faker->addProvider(new \Faker\Provider\at_AT\Payment($faker));
+
     return [
-      'name'    => $faker->name,
+      'name'    => ucfirst($faker->name),
       'address' => $faker->streetAddress,
       'city'    => $faker->city,
       'zip'     => $faker->postcode,
-      'vat'     => 'SI99999999'
+      'vat'     => $faker->vat(false)
+    ];
+});
+
+$factory->define(App\ProductCategory::class, function (Faker\Generator $faker) {
+    return [
+      'name' => ucfirst(implode(' ', $faker->words()))
     ];
 });
 
 $factory->define(App\Product::class, function (Faker\Generator $faker) {
+    $units = ['kom', 'm', 'm2', 'm3', 'kg', 'h'];
     return [
-      'name'    =>  $faker->sentence(3),
-      'unit'    => 'm3',
-      'price'   => $faker->randomFloat(),
-      'vat'     => 9.5
+      'name'    =>  ucfirst(implode(' ', $faker->words())),
+      'unit'    => $units[$faker->numberBetween(0, 5)],
+      'price'   => $faker->randomFloat(2, 5, 5000),
+      'vat'     => $faker->randomDigit % 2 ? 9.5 : 22
     ];
 });

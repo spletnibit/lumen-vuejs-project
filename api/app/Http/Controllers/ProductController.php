@@ -19,7 +19,7 @@ class ProductController extends ApiController {
   }
 
   public function search(Request $r) {
-    return $this->model->where('name', 'LIKE', "%{$r->input('q')}%")->limit(50)->get();
+    return $this->model->where('name', 'LIKE', "%{$r->input('q')}%")->with(['category'])->limit(50)->get();
   }
 
 }

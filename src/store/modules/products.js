@@ -1,7 +1,13 @@
 import Vapi from 'vuex-rest-api'
+import axios from 'axios'
 
 const products = new Vapi({
   baseURL: 'http://ponudbe.dev/api/public',
+  axios: axios.create({
+    headers: {
+      Authorization: 'Bearer ' + localStorage.getItem('token')
+    }
+  }),
   state: {
     products: [],
     categories: [],
@@ -51,7 +57,7 @@ const products = new Vapi({
     createStateFn: true
   })
 
-products.mutations['RESET_PRODUCT'] = (state, payload) => {
+products.mutations['resetProduct'] = (state) => {
   state.product = {
     id: null,
     name: null,

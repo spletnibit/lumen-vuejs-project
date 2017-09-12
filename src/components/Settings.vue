@@ -25,7 +25,7 @@
 
     <div class="col-md-24" style="margin-top: 20px;">
       <label>Besedilo v nogi PDF izpisa</label>
-      <at-textarea rows="5"></at-textarea>
+      <at-textarea :rows="5"></at-textarea>
     </div>
 
   </div>

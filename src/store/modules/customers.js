@@ -1,7 +1,13 @@
 import Vapi from 'vuex-rest-api'
+import axios from 'axios'
 
 const customers = new Vapi({
   baseURL: 'http://ponudbe.dev/api/public',
+  axios: axios.create({
+    headers: {
+      Authorization: 'Bearer ' + localStorage.getItem('token')
+    }
+  }),
   state: {
     customers: [],
     customer: {

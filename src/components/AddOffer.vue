@@ -2,7 +2,7 @@
   <div class="row" style="margin-top: 20px;">
 
     <h3 class="col-md-24" style="margin-bottom: 20px;">Naredi ponudbo za
-      <at-select size="large" filterable>
+      <at-select size="large" v-model="offer.customer_id" filterable>
         <at-option v-for="(customer, index) in customers" :value="customer.id" :key="index"> {{ customer.name }}</at-option>
       </at-select>
     </h3>
@@ -11,74 +11,67 @@
     <autocomplete
       url="http://ponudbe.dev/api/public/products/search"
       anchor="name"
-      label="writer"
+      label="test"
+      placeholder="Začni tipkati naziv"
       :classes="{ input: 'at-input__original' }"
-      :on-select="getProduct">
+      :on-select="onProductAdd">
     </autocomplete>
 
     <div class="offers__add-products" style="margin-top: 20px;">
       <div class="col-md-8">Naziv</div>
-      <div class="col-md-2">Kol</div>
-      <div class="col-md-2">Enota</div>
+      <div class="col-md-3">Kol</div>
       <div class="col-md-3">Cena</div>
       <div class="col-md-3">DDV</div>
       <div class="col-md-3">Popust</div>
       <div class="col-md-3 text-right">Skupaj</div>
+      <div class="col-md-1 text-center"></div>
     </div>
 
     <div class="col-md-24">
-      <div class="row" v-for="(item, k) in items">
-        <div class="col-md-8">
-          <at-input v-model="item.name"></at-input>
+
+      <div class="row">
+        <div class="col-md-24" v-for="(category, c) in categories">
+          <h3>{{ category.name }}</h3>
+
+          <div v-for="(product_id, p) in category.products" v-if="categories[c].products[p] !== 'undefined'">
+            <offer-product
+              :category-index="c"
+              :product-index="p"
+              :index="getProductIndexById(product_id)"
+              :data="getProductById(product_id)"></offer-product>
+          </div>
 
         </div>
-        <div class="col-md-2">
-          <at-input-number v-model="items[k].qty"></at-input-number>
-        </div>
-        <div class="col-md-2 align-middle">
-          {{ item.unit }}
-        </div>
-        <div class="col-md-3 align-middle">
-          <div v-html="$options.filters.price(items[k].price)"></div>
-        </div>
-        <div class="col-md-3 align-middle">
-          {{ items[k].vat }} %
-        </div>
-        <div class="col-md-3">
-          <at-input v-model="item.discount">
-            <template slot="append">%</template>
-          </at-input>
-        </div>
-        <div class="col-md-3 align-middle text-right" v-html="$options.filters.price(item.total)"></div>
       </div>
+
     </div>
 
     <div class="col-md-24" style="margin-top: 20px;">
       <div class="row">
         <div class="col-md-20 text-right">Skupaj:</div>
         <div class="col-md-4 text-right">
-          <div v-html="$options.filters.price(subtotal)"></div>
+          <div v-html="$options.filters.price(offer.subtotal)"></div>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-20 text-right">Popust:</div>
         <div class="col-md-4 text-right">
-          <div v-html="$options.filters.price(subtotal_discount)"></div>
+          <div v-html="$options.filters.price(offer.subtotal_discount)"></div>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-20 text-right">DDV:</div>
         <div class="col-md-4 text-right">
-          <div v-html="$options.filters.price(subtotal_vat)"></div>
+          <div v-html="$options.filters.price(offer.subtotal_vat)"></div>
         </div>
       </div>
 
       <div class="row">
         <div class="col-md-20 text-right">Za plačilo z DDV:</div>
         <div class="col-md-4 text-right">
-          <div v-html="$options.filters.price(total)"></div>
+          <div v-html="$options.filters.price(offer.total)"></div>
         </div>
       </div>
     </div>
@@ -86,7 +79,7 @@
 
     <div class="col-md-24">
       <div style="float: right;margin-top: 20px;">
-        <at-button type="success" icon="icon-save">Shrani</at-button>
+        <at-button type="success" icon="icon-save" @click="onOffersSave">Shrani</at-button>
       </div>
     </div>
 
@@ -94,42 +87,31 @@
 </template>
 
 <script type="text/babel">
-  import { mapActions } from 'vuex'
+  import { mapState, mapActions, mapMutations } from 'vuex'
   import Autocomplete from 'vue2-autocomplete-js'
+  import OfferProduct from './OfferProduct.vue'
 
   export default {
     name: 'AddOffer',
-    components: { Autocomplete },
+    components: { Autocomplete, OfferProduct },
     data () {
       return {
-        customers: [],
-        items: [],
-        item: {
-          name: null,
-          qty: 0,
-          unit: null,
-          price: 0,
-          vat: 0,
-          discount: 0,
-          total: 0
-        },
-        subtotal: 0,
-        subtotal_discount: 0,
-        subtotal_vat: 0,
-        total: 0
-
-      }
-    },
-    watch: {
-      items: {
-        handler: function (after, before) {
-          this.recalculate()
-        },
-        deep: true
+        customers: []
       }
     },
     created () {
       var self = this
+
+      // check if edit mode
+      if (typeof this.$route.params.id !== 'undefined') {
+        this.getOffer({ params: { id: this.$route.params.id } }).then((res) => {
+          self.setOffer(res.data)
+          self.buildCategoryTree()
+          self.recalculateOffer()
+        }).catch((e) => {
+          self.$Message.error('Prišlo je do napake.')
+        })
+      }
 
       // fill customers select
       this.getCustomers().then((res) => {
@@ -138,49 +120,78 @@
         self.$Message.error('Prišlo je do napake.')
       })
     },
-    filters: {
-      price (price) {
-        return price.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',') + ' &euro;'
-      }
-    },
     methods: {
-      getProduct (product) {
-        this.items.push({
+      onOffersSave () {
+        var request = {
+          method: 'addOffer',
+          args: {
+            data: this.offer
+          },
+          successMessage: 'Nova ponudba uspešno dodana.'
+        }
+
+        if (this.offer.id !== null) {
+          request = {
+            method: 'updateOffer',
+            args: {
+              params: { id: this.offer.id },
+              data: this.offer
+            },
+            successMessage: 'Nova ponudba uspešno urejena.'
+          }
+        }
+
+        this[request.method](request.args).then((res) => {
+          self.$Message.success(request.successMessage)
+        }).catch((e) => {
+          self.$Message.error('Obrazec vsebuje napake.')
+          self.errors = e.response.data.messages
+        })
+      },
+      onProductAdd (product) {
+        this.addProductToOffer({
+          id: product.id,
           name: product.name,
-          qty: 1,
+          pivot: { qty: 1, discount: 0 },
           unit: product.unit,
           price: parseFloat(product.price),
-          vat: parseFloat(product.vat),
-          discount: 0
+          vat: parseFloat(product.vat)
         })
-        this.recalculate()
+        this.recalculateOffer()
       },
-      recalculate () {
-        this.subtotal = 0
-        this.subtotal_vat = 0
-        this.subtotal_discount = 0
-        this.total = 0
-
-        for (var index in this.items) {
-          let discount = this.items[index].price * parseFloat(this.items[index].discount) / 100
-          let vat = parseFloat(this.items[index].total) * this.items[index].vat / 100
-
-          this.items[index].total = (this.items[index].price - discount) * this.items[index].qty
-
-          this.subtotal_discount += discount
-          this.subtotal_vat += vat
-          this.subtotal += this.items[index].total
-          this.total += this.items[index].total + vat
-        }
+      getProductIndexById (id) {
+        return this.offer.products.findIndex(x => x.id === id)
+      },
+      getProductById (id) {
+        return this.offer.products.find(x => x.id === id)
       },
       ...mapActions([
-        'getCustomers'
+        'getCustomers',
+        'addOffer',
+        'getOffer',
+        'updateOffer'
+      ]),
+      ...mapMutations([
+        'addProductToOffer',
+        'recalculateOffer',
+        'setOffer',
+        'buildCategoryTree'
       ])
+    },
+    computed: {
+      ...mapState({
+        offer: state => state.offers.offer,
+        pending_offer: state => state.offers.pending.offer,
+        error_offer: state => state.offers.error.offer,
+
+        categories: state => state.offers.categories
+      })
     }
   }
 </script>
 
 <style>
+  .offers__products { font-size: 12px; }
   .offers__add-products { width: 100%;display: flex;font-size: 18px; border-bottom: 1px solid #e3e3e3; margin-bottom: 15px; padding-bottom: 5px;}
   .offers__totals { width: 100%;display: flex;}
 
@@ -202,6 +213,7 @@
   }
 
   .autocomplete ul{
+    z-index: 9;
     font-family: sans-serif;
     position: absolute;
     list-style: none;
@@ -253,8 +265,7 @@
   .autocomplete ul li.focus-list a span{ /*backwards compat*/
     color: white;
   }
-
-  /*.showAll-transition{
+  .showAll-transition{
     opacity: 1;
     height: 50px;
     overflow: hidden;
@@ -267,6 +278,6 @@
 
   .showAll-leave{
     display: none;
-  }*/
+  }
 
 </style>

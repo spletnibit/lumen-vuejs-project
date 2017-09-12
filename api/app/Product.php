@@ -20,7 +20,7 @@ class Product extends Ardent {
   public $with = ['category'];
 
   public static $relationsData = [
-    'category'  => [self::BELONGS_TO, 'App\ProductCategory', 'category_id', 'id']
+    'category'  => [self::BELONGS_TO, 'App\ProductCategory']
   ];
 
   public static $rules = [
@@ -28,6 +28,11 @@ class Product extends Ardent {
     'unit'    => 'required',
     'price'   => 'required',
     'vat'     => 'required'
+  ];
+
+  protected $casts = [
+    'price'   => 'float',
+    'vat'     => 'float'
   ];
 
   protected $fillable = ['category_id', 'name', 'unit', 'price', 'vat'];

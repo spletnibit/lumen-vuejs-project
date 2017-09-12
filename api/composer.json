@@ -9,7 +9,9 @@
         "laravel/lumen-framework": "5.4.*",
         "vlucas/phpdotenv": "~2.2",
         "laravelbook/ardent": "^3.4",
-        "palanik/lumen-cors": "dev-master"
+        "palanik/lumen-cors": "dev-master",
+        "barryvdh/laravel-dompdf": "^0.8.1",
+        "tymon/jwt-auth": "^1.0@dev"
     },
     "require-dev": {
         "fzaninotto/faker": "~1.4",
