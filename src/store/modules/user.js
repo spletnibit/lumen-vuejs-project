@@ -9,18 +9,17 @@ const user = new Vapi({
   }})
   .post({
     action: 'loginUser',
-    property: 'user',
     path: '/login'})
   .post({
     action: 'logoutUser',
-    property: 'user',
     path: '/logout'})
 .getStore({
   createStateFn: true
 })
 
-user.mutations['saveToken'] = (state) => {
-  localStorage.setItem('token', state.user.token)
+user.mutations['saveToken'] = (state, payload) => {
+  state.user.token = payload.token
+  localStorage.setItem('token', payload.token)
 }
 
 user.mutations['logOutUser'] = (state) => {

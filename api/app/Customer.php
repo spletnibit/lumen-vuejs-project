@@ -8,7 +8,7 @@
 
 namespace App;
 
-
+use Illuminate\Support\Facades\Auth;
 use LaravelArdent\Ardent\Ardent;
 
 class Customer extends Ardent{
@@ -26,5 +26,13 @@ class Customer extends Ardent{
     'vat'     => 'required'
   ];
 
-  protected $fillable =  ['name','address','city','zip','vat'];
+  public static $relationsData = [
+    'user' => [self::BELONGS_TO, 'App\User']
+  ];
+
+  public function beforeSave() {
+    $this->user_id = Auth::id();
+  }
+
+  protected $fillable =  ['user_id', 'name','address','city','zip','vat'];
 }

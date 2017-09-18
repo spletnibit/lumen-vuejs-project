@@ -8,6 +8,7 @@
 
 namespace App;
 use LaravelArdent\Ardent\Ardent;
+use Illuminate\Support\Facades\Auth;
 
 class ProductCategory extends Ardent {
   public $autoHydrateEntityFromInput = true;    // hydrates on new entries' validation
@@ -17,6 +18,8 @@ class ProductCategory extends Ardent {
   protected $table = 'product_category';
   public $timestamps = false;
 
+  protected $fillable = ['user_id', 'parent_id', 'name'];
+
   public static $rules = [
     'name'    => 'required'
   ];
@@ -25,5 +28,12 @@ class ProductCategory extends Ardent {
     'products' => [self::HAS_MANY, 'App\Product']
   ];
 
-  protected $fillable = ['parent_id', 'name'];
+
+  public function beforeSave() {
+    $this->user_id = Auth::id();
+
+    if (empty($this->parent_id)) {
+      $this->parent_id = null;
+    }
+  }
 }

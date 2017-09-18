@@ -18,7 +18,8 @@ class AuthController extends Controller
   }
 
   public function postLogout(Request $r) {
-    $this->jwt->invalidate($r->input('token'));
+    $this->jwt->setToken($r->input('token'));
+    $this->jwt->invalidate();
 
     return response()->json([
       'token' => null

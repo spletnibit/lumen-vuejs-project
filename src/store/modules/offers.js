@@ -1,13 +1,7 @@
 import Vapi from 'vuex-rest-api'
-import axios from 'axios'
 
 const offers = new Vapi({
   baseURL: 'http://ponudbe.dev/api/public',
-  axios: axios.create({
-    headers: {
-      Authorization: 'Bearer ' + localStorage.getItem('token')
-    }
-  }),
   state: {
     offers: [],
     offer: {
@@ -74,6 +68,7 @@ offers.mutations['recalculateOffer'] = (state) => {
 
 offers.mutations['buildCategoryTree'] = (state, payload) => {
   // costruct array index map of products and categories
+  console.log(state, 'd')
   for (var productIndex in state.offer.products) {
     var productId = state.offer.products[productIndex].id
     var categoryId = state.offer.products[productIndex].category_id

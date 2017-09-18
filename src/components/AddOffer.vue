@@ -13,6 +13,7 @@
       anchor="name"
       label="test"
       placeholder="Začni tipkati naziv"
+      :customHeaders="{ Authorization: 'Bearer ' + user.token }"
       :classes="{ input: 'at-input__original' }"
       :on-select="onProductAdd">
     </autocomplete>
@@ -120,6 +121,9 @@
         self.$Message.error('Prišlo je do napake.')
       })
     },
+    mounted () {
+      console.log(this.user)
+    },
     methods: {
       onOffersSave () {
         var request = {
@@ -180,6 +184,8 @@
     },
     computed: {
       ...mapState({
+        user: state => state.user.user,
+
         offer: state => state.offers.offer,
         pending_offer: state => state.offers.pending.offer,
         error_offer: state => state.offers.error.offer,

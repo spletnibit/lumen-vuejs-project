@@ -170,10 +170,6 @@
       }
     },
     created () {
-      if (this.product_categories.length === 0) {
-        this.getProductCategories()
-      }
-
       var self = this
       this.$Loading.start()
       this.tableData = null
@@ -190,6 +186,11 @@
         self.$Message.error('Prišlo je do napake.')
         self.$Loading.finish()
       })
+    },
+    mounted () {
+      if (this.product_categories.length === 0) {
+        this.getProductCategories()
+      }
     },
     methods: {
       onProductCreateOpen () {
@@ -227,9 +228,11 @@
       onCategoryCreate () {
         var self = this
         this.addProductCategory({ data: this.product_category }).then((res) => {
+          self.addCategoryToArray(res.data)
           self.$Message.success('Nova kategorija uspešno dodana.')
           self.modal2 = false
         }).catch((e) => {
+          console.log(e, Object.keys(e))
           self.$Message.error('Obrazec vsebuje napake.')
           self.errors = e.response.data.messages
         })
@@ -254,7 +257,8 @@
         'addProduct'
       ]),
       ...mapMutations([
-        'resetProduct'
+        'resetProduct',
+        'addCategoryToArray'
       ])
     },
     computed: {

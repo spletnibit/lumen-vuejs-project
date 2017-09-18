@@ -182,7 +182,9 @@
           request.successMessage = 'Nova stranka uspešno urejena.'
         }
 
-        this.customers[request.method](request.args)
+        console.log(request)
+
+        this[request.method](request.args)
           .then((res) => {
             self.$Message.success(request.successMessage)
             self.modal1 = false

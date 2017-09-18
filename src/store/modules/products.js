@@ -1,13 +1,7 @@
 import Vapi from 'vuex-rest-api'
-import axios from 'axios'
 
 const products = new Vapi({
   baseURL: 'http://ponudbe.dev/api/public',
-  axios: axios.create({
-    headers: {
-      Authorization: 'Bearer ' + localStorage.getItem('token')
-    }
-  }),
   state: {
     products: [],
     categories: [],
@@ -65,6 +59,10 @@ products.mutations['resetProduct'] = (state) => {
     price: null,
     vat: null
   }
+}
+
+products.mutations['addCategoryToArray'] = (state, category) => {
+  state.categories.push(category)
 }
 
 export default products

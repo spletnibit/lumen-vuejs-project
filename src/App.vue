@@ -1,6 +1,6 @@
 <template>
   <div id="app" class="container-fluid">
-    <div class="row" v-if="user">
+    <div class="row" v-if="user.token">
       <div class="col-md-20">
         <at-menu mode="horizontal" active-Name="offers" theme="dark">
           <at-menu-item name="offers"><router-link to="/offers"><i class="icon icon-home"></i>Ponudbe</router-link></at-menu-item>

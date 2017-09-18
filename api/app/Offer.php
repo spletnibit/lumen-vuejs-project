@@ -38,5 +38,5 @@ class Offer extends Ardent {
     'total'             => 'float',
   ];
 
-  protected $fillable = ['customer_id', 'subtotal', 'subtotal_discount', 'subtotal_vat', 'total', 'pdf_generated_at'];
+  protected $fillable = ['user_id', 'customer_id', 'subtotal', 'subtotal_discount', 'subtotal_vat', 'total', 'pdf_generated_at'];
 }

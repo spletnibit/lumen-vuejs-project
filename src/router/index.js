@@ -24,15 +24,14 @@ const router = new Router({
   ]
 })
 
-import user from '../store/modules/user'
+import store from '../store/index'
 
 /*
  protect frontend routed and redirect them to login, if jwt token is absent
  */
 router.beforeEach((to, from, next) => {
-  console.log(user.state())
-  if (!user.state().user.token) {
-    if (to.name === 'guarded') {
+  if (!store._modules.root._children.user.state.user.token) {
+    if (to.name === null || to.name === 'guarded') {
       router.app.$Message.info('Potrebna je prijava.')
       router.push({path: '/login'})
       return

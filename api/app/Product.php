@@ -35,5 +35,5 @@ class Product extends Ardent {
     'vat'     => 'float'
   ];
 
-  protected $fillable = ['category_id', 'name', 'unit', 'price', 'vat'];
+  protected $fillable = ['user_id', 'category_id', 'name', 'unit', 'price', 'vat'];
 }

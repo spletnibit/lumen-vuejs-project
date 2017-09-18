@@ -52,28 +52,35 @@
             password: this.login.password
           }
         }).then((res) => {
-          this.saveToken()
+          console.log(res)
+          this.saveToken({
+            token: res.data.token
+          })
           self.$Notify.success('Prijava uspešna.')
-          this.$router.push('/offers/')
+          this.$router.push({ path: '/offers/' })
         }).catch((e) => {
           try {
-            if (self.error_user.response.data[0] === 'user_not_found') {
+            if (e.response.data[0] === 'user_not_found') {
               self.$Message.error('Uporabnik ne obstaja ali pa so podatki napačni.')
             }
 
-            if (typeof self.error_user.response.data['password'] !== 'undefined') {
-              self.$Message.error(self.error_user.response.data['password'][0])
+            if (typeof e.response.data['password'] !== 'undefined') {
+              self.$Message.error(e.response.data['password'][0])
             }
-            if (typeof self.error_user.response.data['email'] !== 'undefined') {
-              self.$Message.error(self.error_user.response.data['email'][0])
-            }
+
+            setTimeout(() => {
+              if (typeof e.response.data['email'] !== 'undefined') {
+                self.$Message.error(e.response.data['email'][0])
+              }
+            }, 250)
           } catch (ee) {
             console.log('2', ee)
           }
         })
       },
       getStatus (key) {
-        if (this.error_user !== null) {
+        if (typeof this.error_user !== 'undefined' && this.error_user !== null) {
+          console.log(this.error_user)
           if (typeof this.error_user.response.data[key] !== 'undefined') {
             return 'error'
           }
