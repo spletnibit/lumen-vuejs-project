@@ -95,8 +95,8 @@
       </at-modal>
 
       <h3 class="col-md-24" style="margin-top: 20px;">Izdeleki/storitve</h3>
-      <div class="col-md-24" v-if="tableData !== null">
-        <at-table :columns="columns" :data="tableData" stripe border></at-table>
+      <div class="col-md-24" v-if="products.length">
+        <at-table :columns="columns" :data="products" stripe border></at-table>
       </div>
     </div>
 
@@ -165,22 +165,13 @@
               ])
             }
           }
-        ],
-        tableData: null
+        ]
       }
     },
     created () {
       var self = this
       this.$Loading.start()
-      this.tableData = null
       this.getProducts().then((res) => {
-        var data = [...res.data]
-        for (var key in data) {
-          if (data[key].category !== null) {
-            data[key].category = data[key].category.name
-          }
-        }
-        self.tableData = data
         self.$Loading.finish()
       }).catch((e) => {
         self.$Message.error('Prišlo je do napake.')
@@ -218,6 +209,10 @@
         }
 
         this[request.method](request.args).then((res) => {
+          if (request.method === 'addProduct') {
+            self.addProductToArray(res.data)
+          }
+
           self.$Message.success(request.successMessage)
           self.modal1 = false
         }).catch((e) => {
@@ -258,7 +253,8 @@
       ]),
       ...mapMutations([
         'resetProduct',
-        'addCategoryToArray'
+        'addCategoryToArray',
+        'addProductToArray'
       ])
     },
     computed: {

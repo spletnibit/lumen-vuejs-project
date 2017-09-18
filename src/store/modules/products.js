@@ -65,4 +65,8 @@ products.mutations['addCategoryToArray'] = (state, category) => {
   state.categories.push(category)
 }
 
+products.mutations['addProductToArray'] = (state, product) => {
+  state.products.push(product)
+}
+
 export default products

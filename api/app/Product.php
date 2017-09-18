@@ -7,6 +7,7 @@
  */
 
 namespace App;
+use Illuminate\Support\Facades\Auth;
 use LaravelArdent\Ardent\Ardent;
 
 class Product extends Ardent {
@@ -36,4 +37,8 @@ class Product extends Ardent {
   ];
 
   protected $fillable = ['user_id', 'category_id', 'name', 'unit', 'price', 'vat'];
+
+  public function beforeSave() {
+    $this->user_id = Auth::id();
+  }
 }
