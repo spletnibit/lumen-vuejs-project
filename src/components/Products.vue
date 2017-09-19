@@ -15,13 +15,12 @@
       <at-modal
         v-model="modal1"
         title="Dodaj izdelek/storitev"
-        width=""
         :show-footer="false">
         <div class="row">
           <input type="hidden" v-model="product.id" />
           <div class="col-sm-24 col-md-20">
             <label>Naziv</label>
-            <at-input v-model="product.name"  :status="getInputStatus('name')"></at-input>
+            <at-input v-model="productName"></at-input>
           </div>
           <div class="col-sm-12 col-md-4">
             <label>Enota</label>
@@ -41,7 +40,7 @@
             <label>Kategorija</label>
 
             <at-select v-model="product.category_id" placeholder="" size="normal">
-              <at-option v-for="(item, index) in product_categories" :value="item.id" :key="index"> {{ item.name }}</at-option>
+              <at-option v-for="(item, index) in categories" :value="item.id" :key="index"> {{ item.name }}</at-option>
             </at-select>
           </div>
 
@@ -64,7 +63,6 @@
       <at-modal
         v-model="modal2"
         title="Dodaj kategorijo"
-        width=""
         :showFooter="false">
         <div class="row">
           <div class="col-md-24">
@@ -74,7 +72,7 @@
           <div class="col-md-24">
             <label>Nadrejena kategorija</label>
             <at-select v-model="product_category.parent_id">
-              <at-option v-for="item in product_categories" :value="item.id" :key="item.id"> {{ item.name }}</at-option>
+              <at-option v-for="item in categories" :value="item.id" :key="item.id"> {{ item.name }}</at-option>
             </at-select>
           </div>
           <div class="col-md-24" style="margin-top: 20px;">
@@ -95,8 +93,14 @@
       </at-modal>
 
       <h3 class="col-md-24" style="margin-top: 20px;">Izdeleki/storitve</h3>
+      <div v-if="pending_product">loading</div>
       <div class="col-md-24" v-if="products.length">
-        <at-table :columns="columns" :data="products" stripe border></at-table>
+        <at-table :columns="productColumns" :data="products" stripe border></at-table>
+      </div>
+
+      <h3 class="col-md-24" style="margin-top: 20px;">Kategorije</h3>
+      <div class="col-md-24" v-if="categories.length">
+        <at-table :columns="categoryColumns" :data="categories" stripe border></at-table>
       </div>
     </div>
 
@@ -112,7 +116,31 @@
         modal1: false,
         modal2: false,
         errors: [],
-        columns: [
+
+        categoryColumns: [
+          { title: 'Naziv', key: 'name' },
+          { title: 'Akcije',
+            render: (h, params) => {
+              return h('div', [
+                h('AtButton', {
+                  props: {
+                    size: 'small',
+                    icon: 'icon-trash',
+                    type: 'error',
+                    hollow: true,
+                    circle: true
+                  },
+                  on: {
+                    click: () => {
+                      this.$Message(params.item.address)
+                    }
+                  }
+                }, '')
+              ])
+            }
+          }
+        ],
+        productColumns: [
           { title: 'Naziv', key: 'name' },
           { title: 'Enota', key: 'unit' },
           { title: 'Cena', key: 'price' },
@@ -179,7 +207,7 @@
       })
     },
     mounted () {
-      if (this.product_categories.length === 0) {
+      if (this.categories.length === 0) {
         this.getProductCategories()
       }
     },
@@ -208,26 +236,23 @@
           request.successMessage = 'Artikel/storitev uspešno urejen/a.'
         }
 
-        this[request.method](request.args).then((res) => {
-          if (request.method === 'addProduct') {
-            self.addProductToArray(res.data)
-          }
+        console.log(request)
 
+        this[request.method](request.args).then((res) => {
           self.$Message.success(request.successMessage)
           self.modal1 = false
         }).catch((e) => {
           self.$Message.error('Obrazec vsebuje napake.')
-          self.errors = e.response.data.messages
+          console.log(e, Object.keys(e), 'f')
+//          self.errors = e.response.data.messages
         })
       },
       onCategoryCreate () {
         var self = this
         this.addProductCategory({ data: this.product_category }).then((res) => {
-          self.addCategoryToArray(res.data)
           self.$Message.success('Nova kategorija uspešno dodana.')
           self.modal2 = false
         }).catch((e) => {
-          console.log(e, Object.keys(e))
           self.$Message.error('Obrazec vsebuje napake.')
           self.errors = e.response.data.messages
         })
@@ -253,11 +278,23 @@
       ]),
       ...mapMutations([
         'resetProduct',
-        'addCategoryToArray',
-        'addProductToArray'
+        'updateProductState'
       ])
     },
     computed: {
+      // product
+      productName: {
+        get () {
+          return this.$store.state.products.product.name
+        },
+        set (val) {
+          console.log(val)
+          this.updateProductState({
+            key: 'name',
+            val: val
+          })
+        }
+      },
       ...mapState({
         product: state => state.products.product,
         pending_product: state => state.products.pending.product,
@@ -267,9 +304,9 @@
         pending_products: state => state.products.pending.products,
         error_products: state => state.products.error.products,
 
-        product_categories: state => state.products.categories,
-        pending_product_categories: state => state.products.pending.categories,
-        error_product_categories: state => state.products.error.categories,
+        categories: state => state.products.categories,
+        pending_categories: state => state.products.pending.categories,
+        error_categories: state => state.products.error.categories,
 
         product_category: state => state.products.category,
         pending_product_category: state => state.products.pending.category,

@@ -12,7 +12,7 @@ const products = new Vapi({
     },
     product: {
       id: null,
-      name: null,
+      name: '',
       unit: null,
       price: null,
       vat: null,
@@ -41,28 +41,37 @@ const products = new Vapi({
     path: '/products/categories'})
   .post({
     action: 'addProductCategory',
-    property: 'category',
+    onSuccess: (state, payload) => {
+      state.categories.push(payload.data)
+    },
     path: '/products/categories/add'})
   .post({
     action: 'addProduct',
-    property: 'product',
+    onSuccess: (state, payload) => {
+      console.log('a', state, payload)
+      // state.products.push(payload.data)
+    },
+    onError: (state, error) => {
+      console.log('b', state, error)
+      // state.products.push(payload.data)
+    },
     path: '/products/add'})
   .getStore({
     createStateFn: true
   })
 
-products.mutations['resetProduct'] = (state) => {
-  state.product = {
-    id: null,
-    name: null,
-    unit: null,
-    price: null,
-    vat: null
-  }
+products.mutations.updateProductState = (state, payload) => {
+  state.product[payload.key] = payload.val
 }
 
-products.mutations['addCategoryToArray'] = (state, category) => {
-  state.categories.push(category)
+products.mutations.resetProduct = (state) => {
+  // state.product = {
+  //   id: null,
+  //   name: null,
+  //   unit: null,
+  //   price: null,
+  //   vat: null
+  // }
 }
 
 products.mutations['addProductToArray'] = (state, product) => {

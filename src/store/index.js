@@ -10,7 +10,7 @@ import user from './modules/user'
 
 Vue.use(Vuex)
 let store = new Vuex.Store({
-  strict: false,
+  strict: true,
   modules: {
     customers,
     products,
