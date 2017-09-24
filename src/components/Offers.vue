@@ -5,166 +5,100 @@
       <at-button
       icon="icon-plus"
       type="primary"
-      @click="modal1=true" hollow>Dodaj ponudbo</at-button>
+      @click="onOfferCreate" hollow>Dodaj ponudbo</at-button>
     </router-link>
-
-    <at-modal
-      v-model="pdf.modal"
-      title="PDF Ponudbe"
-      width=""
-      :show-footer="false">
-      <div class="row">
-        <div class="col-md-24">
-
-          <div class="embed-responsive embed-responsive-1by1">
-            <iframe class="embed-responsive-item" :src="pdf.url"></iframe>
-          </div>
-        </div>
-      </div>
-    </at-modal>
 
 
     <h3 class="col-md-24" style="margin-top: 20px;">Ponudbe</h3>
-    <div class="col-md-24" v-if="tableData !== null">
-      <at-table :columns="columns" :data="tableData" stripe border></at-table>
+    <div class="col-md-24" v-if="offers.length">
+      <div class="at-table at-table--stripe at-table--normal at-table--border">
+        <v-client-table name="offerTable" :data="offers" :columns="offerColumns" :options="offerOptions">
+          <template slot="id" scope="props">
+            <div>Ponudba #{{ props.row.id }}</div>
+          </template>
+          <template slot="total" scope="props">
+            <div>{{ props.row.total | price }}</div>
+          </template>
+          <template slot="customer_id" scope="props">
+            <div>{{ props.row.customer.name }}</div>
+          </template>
+          <template slot="created_at" scope="props">
+            <div>
+              {{ props.row.created_at | datetime }}
+            </div>
+          </template>
+          <template slot="updated_at" scope="props">
+            <div>
+              {{ props.row.updated_at | datetime }}
+            </div>
+          </template>
+          <template slot="actions" scope="props">
+            <div>
+              <at-button size="small" icon="icon-edit" type="primary" @click="onOfferEdit(props.row.id)" hollow circle></at-button>
+              <at-button size="small" icon="icon-download" type="primary" @click="onOfferPdf(props.row.id)" hollow circle></at-button>
+              <at-button size="small" icon="icon-trash" type="error" @click="onOfferDelete(props.row.id)" hollow circle></at-button>
+            </div>
+          </template>
+        </v-client-table>
+      </div>
     </div>
   </div>
 </template>
 
 <script type="text/babel">
+  import Vue from 'vue'
   import { mapState, mapActions } from 'vuex'
+  import {ClientTable} from 'vue-tables-2'
 
+  Vue.use(ClientTable, {}, true)
   export default {
     name: 'offers',
     data () {
       return {
-        pdf: {
-          modal: false,
-          url: 'http://ponudbe.dev/api/public/offers/pdf/1'
-        },
-        columns: [
-          { title: '#',
-            render: (h, params) => {
-              return params.index + 1
-            }
-          },
-          { title: 'Stranka', key: 'customer' },
-          { title: 'Skupaj',
-            key: 'total',
-            render: (h, params) => {
-              return this.$options.filters.price(params.item.total)
-            },
-            sortType: 'normal' },
-          { title: 'Dodano',
-            key: 'created_at',
-            sortType: 'normal',
-            render: (h, params) => {
-              return this.$options.filters.datetime(params.item.created_at)
-            }
-          },
-          { title: 'Spremenjeno',
-            key: 'updated_at',
-            render: (h, params) => {
-              return this.$options.filters.datetime(params.item.updated_at)
-            },
-            sortType: 'normal' },
-          {
-            title: 'Akcije',
-            render: (h, params) => {
-              var self = this
-              return h('div', [
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-edit',
-                    type: 'primary',
-                    hollow: true,
-                    circle: true
-                  },
-                  style: {
-                    marginRight: '8px'
-                  },
-                  on: {
-                    click: () => {
-                      console.log('/offers/edit/' + params.item.id)
-                      self.$router.push({
-                        path: '/offers/edit/' + params.item.id
-                      })
-                    }
-                  }
-                }, ''),
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-download',
-                    type: 'primary',
-                    hollow: true,
-                    circle: true
-                  },
-                  style: {
-                    marginRight: '8px'
-                  },
-                  on: {
-                    click: () => {
-                      this.pdf.url = 'http://ponudbe.dev/api/public/offers/pdf/' + params.item.id
-                      this.pdf.modal = true
-                    }
-                  }
-                }, 'PDF'),
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-trash',
-                    type: 'error',
-                    hollow: true,
-                    circle: true
-                  },
-                  on: {
-                    click: () => {
-                    }
-                  }
-                }, '')
-              ])
-            }
-          }
-        ],
-        tableData: null
+        offerColumns: ['id', 'customer_id', 'total', 'created_at', 'updated_at', 'actions'],
+        offerOptions: {}
       }
     },
     created () {
-      var self = this
-      this.$Loading.start()
-      this.tableData = null
-
-      this.getOffers().then((res) => {
-        var data = [...res.data]
-        for (var key in data) {
-          if (data[key].customer !== null) {
-            data[key].customer = data[key].customer.name
-          }
-        }
-        data.name = 'Ponudba #' + data.id
-        self.tableData = data
-        self.$Loading.finish()
-      }).catch((e) => {
-        self.$Message.error('Prišlo je do napake.')
-        self.$Loading.finish()
-      })
+      this.getOffers()
     },
     methods: {
-      generatePDF () {
+      onOfferEdit (id) {
+        this.$router.push({
+          path: '/offers/edit/' + id
+        })
+      },
+      onOfferDelete (id) {
+        var self = this
+        this.$Modal.confirm({
+          title: 'Izbris ponudbe',
+          content: 'Potrdite izbis ponudbe.',
+          cancelText: 'Prekliči',
+          okText: 'Potrdi'
+        }).then(() => {
+          self.deleteOffer({ params: { id: id } }).then((res) => {
+            this.$Message.success('Ponudba je bila uspešno izbrisana')
+          })
+        })
+      },
+      onOfferPdf (id) {
+        console.log(this.user)
+        window.open('http://ponudbe.local/api/public/offers/pdf/' + id + '?token=' + this.user.token, '_blank', 'fullscreen=yes')
+      },
+      onOfferCreate () {
+        this.modal1 = true
       },
       ...mapActions([
-        'getOffers'
+        'getOffers',
+        'deleteOffer'
       ])
     },
     computed: {
-      pdfUrl () {
-      },
       ...mapState({
         offers: state => state.offers.offers,
         pending_offers: state => state.offers.pending.offers,
-        error_offers: state => state.offers.error.offers
+        error_offers: state => state.offers.error.offers,
+        user: state => state.user.user
       })
     }
   }

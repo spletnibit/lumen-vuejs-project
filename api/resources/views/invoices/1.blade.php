@@ -64,7 +64,20 @@
   </thead>
   <tbody>
 
-  @foreach($offer->products as $k => $product)
+  <?php
+
+    $categories = $offer->products
+      ->pluck('category')
+      ->mapWithKeys(function($item) {
+        return $item ? [$item->id => $item->name] : [0 => 'Ostalo'];
+    })->toArray();
+
+    $products = $offer->products->groupBy('category_id');
+  ?>
+
+  @foreach($products as $categoryId => $categoryProducts)
+    <tr><td colspan="6">{{ $categories[$categoryId] }}</td></tr>
+    @foreach ($categoryProducts as $k => $product)
     <tr>
       <td scope="row">{{ $k+1 }}</td>
       <td>{{ $product->name}}</td>
@@ -73,6 +86,7 @@
       <td align="right">{{ $product->pivot->discount }} %</td>
       <td align="right">{{ $product->pivot->total }} &euro;</td>
     </tr>
+    @endforeach
   @endforeach
   </tbody>
 
@@ -99,6 +113,30 @@
   </tr>
   </tfoot>
 </table>
+
+<br>
+<br>
+<br>
+<hr>
+
+<table>
+  <thead>
+    <tr>
+      <th>Sklop</th>
+      <th>Skupaj</th>
+    </tr>
+  </thead>
+  <tbody>
+    @foreach($products as $categoryId => $categoryProducts)
+      <tr>
+        <td>{{ $categories[$categoryId] }}</td>
+        <td>{{ $categoryProducts->sum('pivot.total') }} &euro;</td>
+      </tr>
+    @endforeach
+  </tbody>
+</table>
+
+
 
 </body>
 </html>

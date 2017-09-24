@@ -39,6 +39,20 @@ class Product extends Ardent {
   protected $fillable = ['user_id', 'category_id', 'name', 'unit', 'price', 'vat'];
 
   public function beforeSave() {
+    if (empty($this->category_id)) {
+      $this->category_id = null;
+    }
     $this->user_id = Auth::id();
+  }
+
+  public function afterUpdate() {
+//    dd($this->category(), $this->category_id);
+  }
+
+  public function getCategoryIdAttribute($val) {
+    if (is_null($val)) {
+      return 0;
+    }
+    return $val;
   }
 }

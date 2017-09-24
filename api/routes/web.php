@@ -21,10 +21,12 @@ $app->group(['middleware' => ['auth']], function () use ($app) {
         $app->post('/add', 'ProductController@create');
         $app->get('/search', 'ProductController@search');
         $app->post('/categories/add', 'ProductCategoryController@create');
+        $app->delete('/categories/{id}', 'ProductCategoryController@destroy');
 
         $app->get('/', 'ProductController@index');
         $app->get('/{id}', 'ProductController@edit');
         $app->put('/{id}', 'ProductController@update');
+        $app->delete('/{id}', 'ProductController@destroy');
 
     });
 
@@ -35,7 +37,7 @@ $app->group(['middleware' => ['auth']], function () use ($app) {
         $app->delete('/{id}', 'CustomerController@destroy');
         $app->post('/add', 'CustomerController@create');
     });
-    
+
     $app->group(['prefix' => '/offers'], function () use ($app) {
         $app->get('/', 'OfferController@index');
         $app->get('/{id}', 'OfferController@edit');

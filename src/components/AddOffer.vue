@@ -1,15 +1,21 @@
 <template>
   <div class="row" style="margin-top: 20px;">
 
-    <h3 class="col-md-24" style="margin-bottom: 20px;">Naredi ponudbo za
-      <at-select size="large" v-model="offer.customer_id" filterable>
-        <at-option v-for="(customer, index) in customers" :value="customer.id" :key="index"> {{ customer.name }}</at-option>
-      </at-select>
-    </h3>
+    <div :class="{ 'col-md-20': offer.id, 'col-md-24': !offer.id }">
+      <h3><span v-if="offer.id">Uredi</span><span v-else>Naredi</span> ponudbo za
+        <at-select size="large" v-model="offerCustomerId" filterable>
+          <at-option v-for="(customer, index) in customers" :value="customer.id" :key="index"> {{ customer.name }}</at-option>
+        </at-select>
+      </h3>
+    </div>
+    <div v-show="offer.id" class="col-md-4">
+      <at-button type="primary" icon="icon-download" @click="onOfferPdf">Generiraj PDF</at-button>
+    </div>
+
 
     <h3 class="col-md-24" style="margin-top: 20px;">Dodaj artikel / storitev</h3>
     <autocomplete
-      url="http://ponudbe.dev/api/public/products/search"
+      url="http://ponudbe.local/api/public/products/search"
       anchor="name"
       label="test"
       placeholder="Začni tipkati naziv"
@@ -30,7 +36,7 @@
 
     <div class="col-md-24">
 
-      <div class="row">
+      <div class="row offers__products">
         <div class="col-md-24" v-for="(category, c) in categories">
           <h3>{{ category.name }}</h3>
 
@@ -97,16 +103,14 @@
     components: { Autocomplete, OfferProduct },
     data () {
       return {
-        customers: []
       }
     },
-    created () {
+    mounted () {
       var self = this
-
+      this.resetOffer()
       // check if edit mode
       if (typeof this.$route.params.id !== 'undefined') {
         this.getOffer({ params: { id: this.$route.params.id } }).then((res) => {
-          self.setOffer(res.data)
           self.buildCategoryTree()
           self.recalculateOffer()
         }).catch((e) => {
@@ -115,17 +119,12 @@
       }
 
       // fill customers select
-      this.getCustomers().then((res) => {
-        self.customers = [...res.data]
-      }).catch((e) => {
-        self.$Message.error('Prišlo je do napake.')
-      })
-    },
-    mounted () {
-      console.log(this.user)
+      this.getCustomers()
     },
     methods: {
       onOffersSave () {
+        this.errors = []
+        var self = this
         var request = {
           method: 'addOffer',
           args: {
@@ -149,11 +148,13 @@
           self.$Message.success(request.successMessage)
         }).catch((e) => {
           self.$Message.error('Obrazec vsebuje napake.')
-          self.errors = e.response.data.messages
+          self.errors = e.response.data
         })
       },
       onProductAdd (product) {
         this.addProductToOffer({
+          category: product.category,
+          category_id: product.category_id,
           id: product.id,
           name: product.name,
           pivot: { qty: 1, discount: 0 },
@@ -161,6 +162,7 @@
           price: parseFloat(product.price),
           vat: parseFloat(product.vat)
         })
+        this.buildCategoryTree()
         this.recalculateOffer()
       },
       getProductIndexById (id) {
@@ -168,6 +170,9 @@
       },
       getProductById (id) {
         return this.offer.products.find(x => x.id === id)
+      },
+      onOfferPdf () {
+        window.open('http://ponudbe.local/api/public/offers/pdf/' + this.offer.id + '?token=' + this.user.token, '_blank', 'fullscreen=yes')
       },
       ...mapActions([
         'getCustomers',
@@ -178,11 +183,23 @@
       ...mapMutations([
         'addProductToOffer',
         'recalculateOffer',
-        'setOffer',
-        'buildCategoryTree'
+        'resetOffer',
+        'buildCategoryTree',
+        'updateOfferState'
       ])
     },
     computed: {
+      offerCustomerId: {
+        get () {
+          return this.$store.state.offers.offer.customer_id
+        },
+        set (val) {
+          this.updateOfferState({
+            key: 'customer_id',
+            val: val
+          })
+        }
+      },
       ...mapState({
         user: state => state.user.user,
 
@@ -190,7 +207,8 @@
         pending_offer: state => state.offers.pending.offer,
         error_offer: state => state.offers.error.offer,
 
-        categories: state => state.offers.categories
+        categories: state => state.offers.categories,
+        customers: state => state.customers.customers
       })
     }
   }

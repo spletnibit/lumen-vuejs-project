@@ -9,7 +9,7 @@
       <at-button
         icon="icon-plus"
         type="success"
-        @click="modal2=true" hollow>Dodaj kategorijo</at-button>
+        @click="onCategoryCreateOpen" hollow>Dodaj kategorijo</at-button>
 
 
       <at-modal
@@ -17,29 +17,28 @@
         title="Dodaj izdelek/storitev"
         :show-footer="false">
         <div class="row">
-          <input type="hidden" v-model="product.id" />
           <div class="col-sm-24 col-md-20">
             <label>Naziv</label>
-            <at-input v-model="productName"></at-input>
+            <at-input v-model="productName" :status="getInputStatus('name')"></at-input>
           </div>
           <div class="col-sm-12 col-md-4">
             <label>Enota</label>
-            <at-input v-model="product.unit" :status="getInputStatus('unit')"></at-input>
+            <at-input v-model="productUnit" :status="getInputStatus('unit')"></at-input>
           </div>
           <div class="col-sm-12 col-md-8">
             <label>Cena na enoto</label>
-            <at-input v-model="product.price" :status="getInputStatus('price')"></at-input>
+            <at-input v-model="productPrice" :status="getInputStatus('price')"></at-input>
           </div>
           <div class="col-sm-24 col-md-8">
             <label>DDV Stopnja</label>
-            <at-input v-model="product.vat" :status="getInputStatus('vat')">
+            <at-input v-model="productVat" :status="getInputStatus('vat')">
               <template slot="append">%</template>
             </at-input>
           </div>
           <div class="col-sm-24 col-md-8">
             <label>Kategorija</label>
 
-            <at-select v-model="product.category_id" placeholder="" size="normal">
+            <at-select v-model="productCategoryId" placeholder="" size="normal" clearable>
               <at-option v-for="(item, index) in categories" :value="item.id" :key="index"> {{ item.name }}</at-option>
             </at-select>
           </div>
@@ -67,11 +66,11 @@
         <div class="row">
           <div class="col-md-24">
             <label>Naziv</label>
-            <at-input v-model="product_category.name"  :status="getInputStatus('name')"></at-input>
+            <at-input v-model="categoryName" :status="getInputStatus('name')"></at-input>
           </div>
           <div class="col-md-24">
             <label>Nadrejena kategorija</label>
-            <at-select v-model="product_category.parent_id">
+            <at-select v-model="categoryParent">
               <at-option v-for="item in categories" :value="item.id" :key="item.id"> {{ item.name }}</at-option>
             </at-select>
           </div>
@@ -95,19 +94,56 @@
       <h3 class="col-md-24" style="margin-top: 20px;">Izdeleki/storitve</h3>
       <div v-if="pending_product">loading</div>
       <div class="col-md-24" v-if="products.length">
-        <at-table :columns="productColumns" :data="products" stripe border></at-table>
+        <div class="at-table at-table--stripe at-table--normal at-table--border">
+          <v-client-table v-if="products.length" name="productTable" :data="products" :columns="productColumns2" :options="productOptions">
+            <template slot="price" scope="props">
+              <div>
+                {{ props.row.price | price }}
+              </div>
+            </template>
+
+            <template slot="category_id" scope="props">
+              <div>
+                <div v-if="props.row.category">{{ props.row.category.name }}</div>
+                <div v-else>/</div>
+              </div>
+            </template>
+            <template slot="actions" scope="props">
+              <div>
+                <at-button size="small" icon="icon-edit" type="primary" @click="onProductEdit(props.row.id)" hollow circle></at-button>
+                <at-button size="small" icon="icon-trash" type="error" @click="onProductDelete(props.row.id)" hollow circle></at-button>
+              </div>
+            </template>
+          </v-client-table>
+        </div>
       </div>
+
 
       <h3 class="col-md-24" style="margin-top: 20px;">Kategorije</h3>
       <div class="col-md-24" v-if="categories.length">
-        <at-table :columns="categoryColumns" :data="categories" stripe border></at-table>
+        <div class="at-table at-table--stripe at-table--normal at-table--border">
+          <v-client-table v-if="categories.length" name="categoryTable" :data="categories" :columns="categoryColumns" :options="categoryOptions">
+            <template slot="actions" scope="props">
+              <div>
+                <at-button size="small" icon="icon-trash" type="error" @click="onProductCategoryDelete(props.row.id)" hollow circle></at-button>
+              </div>
+            </template>
+          </v-client-table>
+        </div>
       </div>
+
+
+
     </div>
 
 </template>
 
 <script type="text/babel">
+  import Vue from 'vue'
   import { mapState, mapActions, mapMutations } from 'vuex'
+  import {ClientTable} from 'vue-tables-2'
+
+  Vue.use(ClientTable, {}, true)
 
   export default {
     name: 'products',
@@ -116,95 +152,15 @@
         modal1: false,
         modal2: false,
         errors: [],
-
-        categoryColumns: [
-          { title: 'Naziv', key: 'name' },
-          { title: 'Akcije',
-            render: (h, params) => {
-              return h('div', [
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-trash',
-                    type: 'error',
-                    hollow: true,
-                    circle: true
-                  },
-                  on: {
-                    click: () => {
-                      this.$Message(params.item.address)
-                    }
-                  }
-                }, '')
-              ])
-            }
-          }
-        ],
-        productColumns: [
-          { title: 'Naziv', key: 'name' },
-          { title: 'Enota', key: 'unit' },
-          { title: 'Cena', key: 'price' },
-          { title: 'DDV', key: 'vat' },
-          { title: 'Kategorija', key: 'category' },
-          {
-            title: 'Akcije',
-            render: (h, params) => {
-              var self = this
-              return h('div', [
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-edit',
-                    type: 'primary',
-                    hollow: true,
-                    circle: true
-                  },
-                  style: {
-                    marginRight: '8px'
-                  },
-                  on: {
-                    click: () => {
-                      this.$Loading.start()
-                      self.errors = false
-                      self.getProduct({ params: { id: params.item.id } }).then((res) => {
-                        self.modal1 = true
-                        this.$Loading.finish()
-                      }).catch((e) => {
-                        console.log(e)
-                        this.$Loading.finish()
-                      })
-                    }
-                  }
-                }, ''),
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-trash',
-                    type: 'error',
-                    hollow: true,
-                    circle: true
-                  },
-                  on: {
-                    click: () => {
-                      this.$Message(params.item.address)
-                    }
-                  }
-                }, '')
-              ])
-            }
-          }
-        ]
+        productColumns2: ['name', 'unit', 'price', 'vat', 'category_id', 'actions'],
+        productOptions: {},
+        categoryColumns: ['name', 'actions'],
+        categoryOptions: {
+        }
       }
     },
     created () {
-      var self = this
-      this.$Loading.start()
-      this.getProducts().then((res) => {
-        self.$Loading.finish()
-      }).catch((e) => {
-        self.$Message.error('Prišlo je do napake.')
-        self.$Loading.finish()
-      })
+      this.getProducts()
     },
     mounted () {
       if (this.categories.length === 0) {
@@ -212,9 +168,14 @@
       }
     },
     methods: {
+      onCategoryCreateOpen () {
+        this.errors = []
+        this.modal2 = true
+      },
       onProductCreateOpen () {
-        this.modal1 = true
         this.resetProduct()
+        this.modal1 = true
+        this.errors = []
       },
       onProductSave () {
         var self = this
@@ -236,15 +197,40 @@
           request.successMessage = 'Artikel/storitev uspešno urejen/a.'
         }
 
-        console.log(request)
-
         this[request.method](request.args).then((res) => {
           self.$Message.success(request.successMessage)
           self.modal1 = false
         }).catch((e) => {
+          console.log(e)
           self.$Message.error('Obrazec vsebuje napake.')
-          console.log(e, Object.keys(e), 'f')
-//          self.errors = e.response.data.messages
+          self.errors = e.response.data
+        })
+      },
+      onProductEdit (id) {
+        this.errors = false
+        var self = this
+        this.resetProduct()
+        this.getProduct({ params: { id: id } }).then((res) => {
+          self.modal1 = true
+        }).catch((e) => {
+        })
+      },
+      onProductDelete (id) {
+        this.deleteProduct({
+          params: {
+            id: id
+          }
+        }).then(() => {
+          this.$Message.success('Artikel/storitev uspešno izbrisan(a).')
+        })
+      },
+      onProductCategoryDelete (id) {
+        this.deleteProductCategory({
+          params: {
+            id: id
+          }
+        }).then(() => {
+          this.$Message.success('Kategorija uspešno izbrisana.')
         })
       },
       onCategoryCreate () {
@@ -253,8 +239,9 @@
           self.$Message.success('Nova kategorija uspešno dodana.')
           self.modal2 = false
         }).catch((e) => {
+          console.log(e.response)
           self.$Message.error('Obrazec vsebuje napake.')
-          self.errors = e.response.data.messages
+          self.errors = e.response.data
         })
       },
       handleConfirm () {
@@ -271,6 +258,8 @@
       ...mapActions([
         'getProductCategories',
         'addProductCategory',
+        'deleteProductCategory',
+        'deleteProduct',
         'getProducts',
         'getProduct',
         'updateProduct',
@@ -278,7 +267,8 @@
       ]),
       ...mapMutations([
         'resetProduct',
-        'updateProductState'
+        'updateProductState',
+        'updateCategoryState'
       ])
     },
     computed: {
@@ -288,13 +278,79 @@
           return this.$store.state.products.product.name
         },
         set (val) {
-          console.log(val)
           this.updateProductState({
             key: 'name',
             val: val
           })
         }
       },
+      productUnit: {
+        get () {
+          return this.$store.state.products.product.unit
+        },
+        set (val) {
+          this.updateProductState({
+            key: 'unit',
+            val: val
+          })
+        }
+      },
+      productPrice: {
+        get () {
+          return this.$store.state.products.product.price
+        },
+        set (val) {
+          this.updateProductState({
+            key: 'price',
+            val: val
+          })
+        }
+      },
+      productVat: {
+        get () {
+          return this.$store.state.products.product.vat
+        },
+        set (val) {
+          this.updateProductState({
+            key: 'vat',
+            val: val
+          })
+        }
+      },
+      productCategoryId: {
+        get () {
+          return this.$store.state.products.product.category_id
+        },
+        set (val) {
+          this.updateProductState({
+            key: 'category_id',
+            val: val
+          })
+        }
+      },
+      categoryName: {
+        get () {
+          return this.$store.state.products.category.name
+        },
+        set (val) {
+          this.updateCategoryState({
+            key: 'name',
+            val: val
+          })
+        }
+      },
+      categoryParent: {
+        get () {
+          return this.$store.state.products.category.parent_id
+        },
+        set (val) {
+          this.updateCategoryState({
+            key: 'parent_id',
+            val: val
+          })
+        }
+      },
+
       ...mapState({
         product: state => state.products.product,
         pending_product: state => state.products.pending.product,

@@ -1,7 +1,6 @@
 import Vapi from 'vuex-rest-api'
-
 const products = new Vapi({
-  baseURL: 'http://ponudbe.dev/api/public',
+  baseURL: 'http://ponudbe.local/api/public',
   state: {
     products: [],
     categories: [],
@@ -29,11 +28,21 @@ const products = new Vapi({
     path: ({ id }) => `/products/${id}`})
   .put({
     action: 'updateProduct',
-    property: 'product',
+    onSuccess: (state, payload) => {
+      // find index of product in the array by id
+      let i = state.products.map(item => item.id).indexOf(payload.data.id)
+      // delete current object and replace it with a new one
+      state.products.splice(i, 1, payload.data)
+    },
     path: ({ id }) => `/products/${id}`})
   .delete({
     action: 'deleteProduct',
-    property: 'product',
+    onSuccess: (state, payload) => {
+      // find index of product in the array by id
+      let i = state.products.map(item => item.id).indexOf(payload.data.id)
+      // delete object at index i
+      state.products.splice(i, 1)
+    },
     path: ({ id }) => `/products/${id}`})
   .get({
     action: 'getProductCategories',
@@ -42,18 +51,21 @@ const products = new Vapi({
   .post({
     action: 'addProductCategory',
     onSuccess: (state, payload) => {
-      state.categories.push(payload.data)
+      state.categories.splice(state.categories.length, 1, payload.data)
     },
     path: '/products/categories/add'})
+  .delete({
+    action: 'deleteProductCategory',
+    onSuccess: (state, payload) => {
+      // find index of category in the array by id
+      let i = state.categories.map(item => item.id).indexOf(payload.data.id)
+      state.categories.splice(i, 1)
+    },
+    path: ({ id }) => `/products/categories/${id}`})
   .post({
     action: 'addProduct',
     onSuccess: (state, payload) => {
-      console.log('a', state, payload)
-      // state.products.push(payload.data)
-    },
-    onError: (state, error) => {
-      console.log('b', state, error)
-      // state.products.push(payload.data)
+      state.products.splice(state.products.length, 1, payload.data)
     },
     path: '/products/add'})
   .getStore({
@@ -64,14 +76,18 @@ products.mutations.updateProductState = (state, payload) => {
   state.product[payload.key] = payload.val
 }
 
+products.mutations.updateCategoryState = (state, payload) => {
+  state.category[payload.key] = payload.val
+}
+
 products.mutations.resetProduct = (state) => {
-  // state.product = {
-  //   id: null,
-  //   name: null,
-  //   unit: null,
-  //   price: null,
-  //   vat: null
-  // }
+  state.product = {
+    id: null,
+    name: null,
+    unit: null,
+    price: null,
+    vat: null
+  }
 }
 
 products.mutations['addProductToArray'] = (state, product) => {

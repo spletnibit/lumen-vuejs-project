@@ -8,7 +8,7 @@
 
 namespace App;
 use LaravelArdent\Ardent\Ardent;
-
+use Illuminate\Support\Facades\Auth;
 class Offer extends Ardent {
   public $autoHydrateEntityFromInput = true;    // hydrates on new entries' validation
   public $forceEntityHydrationFromInput = true; // hydrates whenever validation is called
@@ -17,14 +17,15 @@ class Offer extends Ardent {
   protected $table = 'offers';
 
   public static $relationsData = [
-    'products' => [self::BELONGS_TO_MANY, 'App\Product', 'table' => 'offer_product', 'pivotKeys' => ['qty', 'discount', 'total', 'offer_id']],
-    'customer' => [self::BELONGS_TO, 'App\Customer']
+    'products'  => [self::BELONGS_TO_MANY, 'App\Product', 'table' => 'offer_product', 'pivotKeys' => ['qty', 'discount', 'total', 'offer_id']],
+    'customer'  => [self::BELONGS_TO, 'App\Customer'],
+    'user'      => [self::BELONGS_TO, 'App\User']
   ];
 
   public $with = ['customer'];
 
   public static $rules = [
-//    'customer_id'       => 'required',
+    'customer_id'       => 'required|exists:customers,id',
     'subtotal'          => 'required|numeric',
     'subtotal_discount' => 'required|numeric',
     'subtotal_vat'      => 'required|numeric',
@@ -39,4 +40,8 @@ class Offer extends Ardent {
   ];
 
   protected $fillable = ['user_id', 'customer_id', 'subtotal', 'subtotal_discount', 'subtotal_vat', 'total', 'pdf_generated_at'];
+
+  public function beforeSave() {
+    $this->user_id = Auth::id();
+  }
 }

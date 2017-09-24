@@ -14,23 +14,23 @@
         <input type="hidden" v-model="customer.id" />
         <div class="col-md-24">
           <label>Naziv</label>
-          <at-input v-model="customer.name" :status="getInputStatus('name')"></at-input>
+          <at-input v-model="customerName" :status="getInputStatus('name')"></at-input>
         </div>
         <div class="col-md-24">
           <label>Naslov</label>
-          <at-input v-model="customer.address" :status="getInputStatus('address')"></at-input>
+          <at-input v-model="customerAddress" :status="getInputStatus('address')"></at-input>
         </div>
         <div class="col-sm-24 col-md-12">
           <label>Kraj</label>
-          <at-input v-model="customer.city" :status="getInputStatus('city')"></at-input>
+          <at-input v-model="customerCity" :status="getInputStatus('city')"></at-input>
         </div>
         <div class="col-sm-24 col-md-12">
           <label>Poštna št.</label>
-          <at-input v-model="customer.zip" :status="getInputStatus('zip')"></at-input>
+          <at-input v-model="customerZip" :status="getInputStatus('zip')"></at-input>
         </div>
         <div class="col-sm-24 col-md-24">
           <label>ID za DDV</label>
-          <at-input v-model="customer.vat"  :status="getInputStatus('vat')"></at-input>
+          <at-input v-model="customerVat"  :status="getInputStatus('vat')"></at-input>
         </div>
 
         <div class="col-md-24" style="margin-top: 20px;">
@@ -53,14 +53,27 @@
 
     <h3 class="col-md-24" style="margin-top: 20px;">Stranke</h3>
     <div class="col-md-24" v-if="customers.length">
-      <at-table :columns="columns" :data="customers" :page-size="50" stripe border pagination></at-table>
+      <div class="at-table at-table--stripe at-table--normal at-table--border">
+        <v-client-table name="customerTable" :data="customers" :columns="customerColumns" :options="customerOptions">
+          <template slot="actions" scope="props">
+            <div>
+              <at-button size="small" icon="icon-edit" type="primary" @click="onCustomerEdit(props.row.id)" hollow circle></at-button>
+              <at-button size="small" icon="icon-trash" type="error" @click="onCustomerDelete(props.row.id)" hollow circle></at-button>
+            </div>
+          </template>
+        </v-client-table>
+      </div>
     </div>
 
   </div>
 </template>
 
 <script type="text/babel">
+  import Vue from 'vue'
   import { mapState, mapActions, mapMutations } from 'vuex'
+  import {ClientTable} from 'vue-tables-2'
+
+  Vue.use(ClientTable, {}, true)
 
   export default {
     name: 'customers',
@@ -69,101 +82,47 @@
         modal1: false,
         errors: false,
         errorsMessage: '',
-        columns: [
-          { title: '#', key: 'id' },
-          { title: 'Naziv', key: 'name', sortType: 'normal' },
-          { title: 'Naslov', key: 'address', sortType: 'normal' },
-          { title: 'Mesto', key: 'city', sortType: 'normal' },
-          { title: 'Poštna št.', key: 'zip' },
-          { title: 'ID ZA DDV', key: 'vat' },
-          {
-            title: 'Akcije',
-            render: (h, params) => {
-              var self = this
-              return h('div', [
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-edit',
-                    type: 'primary',
-                    hollow: true,
-                    circle: true
-                  },
-                  style: {
-                    marginRight: '8px'
-                  },
-                  on: {
-                    click: () => {
-                      this.$Loading.start()
-                      self.errors = false
-                      self.getCustomer({ params: { id: params.item.id } }).then((res) => {
-                        self.modal1 = true
-                        this.$Loading.finish()
-                      }).catch((e) => {
-                        console.log(e)
-                        this.$Loading.finish()
-                      })
-                    }
-                  }
-                }, ''),
-                h('AtButton', {
-                  props: {
-                    size: 'small',
-                    icon: 'icon-trash',
-                    type: 'error',
-                    hollow: true,
-                    circle: true
-                  },
-                  on: {
-                    click: () => {
-                      this.$Modal.confirm({
-                        title: 'Izbris stranke',
-                        content: 'Potrdite izbis stranke.',
-                        cancelText: 'Prekliči',
-                        okText: 'Potrdi'
-                      }).then(() => {
-                        this.$Loading.start()
-                        var message = 'Stranka ' + params.item.name + ' je bila uspešno izbrisana'
-                        self.deleteCustomer({ params: { id: params.item.id } }).then((res) => {
-                          this.$Loading.finish()
-                          this.$Message.success(message)
-                        }).catch((e) => {
-                          this.$Loading.finish()
-                        })
-                      })
-                    }
-                  }
-                }, '')
-              ])
-            }
-          }
-        ],
-        tableData: null
+        customerColumns: ['name', 'address', 'city', 'zip', 'vat', 'actions'],
+        customerOptions: {}
       }
     },
     created () {
       this.onIndex()
     },
     methods: {
-      onIndex () {
+      onCustomerDelete (id) {
         var self = this
-        this.$Loading.start()
-        this.getCustomers().then((res) => {
-          self.$Loading.finish()
-        }).catch((e) => {
-          self.$Message.error('Prišlo je do napake.')
-          self.$Loading.finish()
+        this.$Modal.confirm({
+          title: 'Izbris stranke',
+          content: 'Potrdite izbis stranke.',
+          cancelText: 'Prekliči',
+          okText: 'Potrdi'
+        }).then(() => {
+          self.deleteCustomer({ params: { id: id } }).then((res) => {
+            this.$Message.success('Stranka je bila uspešno izbrisana')
+          })
         })
       },
+      onCustomerEdit (id) {
+        this.errors = false
+        var self = this
+        this.getCustomer({ params: { id: id } }).then((res) => {
+          self.modal1 = true
+        }).catch((e) => {
+          self.$Message.error('Obrazec vsebuje napake.')
+          self.errors = e.response.data
+        })
+      },
+      onIndex () {
+        this.getCustomers()
+      },
       onModalCreate () {
-        this.RESET_CUSTOMER()
+        this.resetCustomer()
         this.modal1 = true
       },
       onCreate () {
         var self = this
-        this.errors = false
-        this.errorsMessage = ''
-        this.$Loading.start()
+        this.errors = []
 
         var request = {
           method: 'addCustomer',
@@ -182,18 +141,14 @@
           request.successMessage = 'Nova stranka uspešno urejena.'
         }
 
-        console.log(request)
-
         this[request.method](request.args)
           .then((res) => {
             self.$Message.success(request.successMessage)
             self.modal1 = false
-            self.$Loading.finish()
             self.onIndex()
           }).catch((e) => {
             self.$Message.error('Obrazec vsebuje napake.')
-            self.errors = e.response.data.messages
-            self.$Loading.finish()
+            self.errors = e.response.data
           })
       },
       getInputStatus (key) {
@@ -209,10 +164,66 @@
         'addCustomer'
       ]),
       ...mapMutations([
-        'RESET_CUSTOMER'
+        'resetCustomer',
+        'updateCustomerState'
       ])
     },
     computed: {
+      customerName: {
+        get () {
+          return this.$store.state.customers.customer.name
+        },
+        set (val) {
+          this.updateCustomerState({
+            key: 'name',
+            val: val
+          })
+        }
+      },
+      customerAddress: {
+        get () {
+          return this.$store.state.customers.customer.address
+        },
+        set (val) {
+          this.updateCustomerState({
+            key: 'address',
+            val: val
+          })
+        }
+      },
+      customerCity: {
+        get () {
+          return this.$store.state.customers.customer.city
+        },
+        set (val) {
+          this.updateCustomerState({
+            key: 'city',
+            val: val
+          })
+        }
+      },
+      customerZip: {
+        get () {
+          return this.$store.state.customers.customer.zip
+        },
+        set (val) {
+          this.updateCustomerState({
+            key: 'zip',
+            val: val
+          })
+        }
+      },
+      customerVat: {
+        get () {
+          return this.$store.state.customers.customer.vat
+        },
+        set (val) {
+          this.updateCustomerState({
+            key: 'vat',
+            val: val
+          })
+        }
+      },
       getTitle () {
         return this.customer.id ? 'Uredi stranko' : 'Dodaj stranko'
       },

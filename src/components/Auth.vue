@@ -52,7 +52,6 @@
             password: this.login.password
           }
         }).then((res) => {
-          console.log(res)
           this.saveToken({
             token: res.data.token
           })
@@ -74,15 +73,16 @@
               }
             }, 250)
           } catch (ee) {
-            console.log('2', ee)
+            console.log('error', ee)
           }
         })
       },
       getStatus (key) {
         if (typeof this.error_user !== 'undefined' && this.error_user !== null) {
-          console.log(this.error_user)
-          if (typeof this.error_user.response.data[key] !== 'undefined') {
-            return 'error'
+          if (this.error_user.hasOwnProperty('response')) {
+            if (this.error_user.response.data.hasOwnProperty(key)) {
+              return 'error'
+            }
           }
         }
         return ''

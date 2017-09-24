@@ -1,7 +1,7 @@
 import Vapi from 'vuex-rest-api'
 
 const user = new Vapi({
-  baseURL: 'http://ponudbe.dev/api/public',
+  baseURL: 'http://ponudbe.local/api/public',
   state: {
     user: {
       token: localStorage.getItem('token')

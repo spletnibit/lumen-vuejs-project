@@ -38,11 +38,13 @@
           productIndex: this.productIndex,
           categoryIndex: this.categoryIndex
         })
+        this.buildCategoryTree()
         this.recalculateOffer()
       },
       ...mapMutations([
         'removeProductFromOffer',
         'recalculateOffer',
+        'buildCategoryTree',
         'removeProductFromCategoryTree'
       ])
     }
@@ -57,5 +59,5 @@
   .qty-input .at-input__original { width: 50px;}
   .qty-input .at-input-group__append { width: 40px;}
 
-  h3 {margin: 10px 0 20px;}
+  .offers__products h3 {margin: 10px 0 20px;}
 </style>

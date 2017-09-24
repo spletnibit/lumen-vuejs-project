@@ -53,12 +53,13 @@ class OfferController extends ApiController {
     if ($checkIfNeedsToBeCreated->count()) {
       foreach ($checkIfNeedsToBeCreated as $product_id) {
         $product = $products[array_search($product_id, $productIds)];
-
+        $total = floatval($product['price']*$product['pivot']['qty']);
+        $total -= $total*$product['pivot']['discount']/100;
         $model->products()->attach($product_id, [
           'offer_id' => $model->id,
           'qty' => $product['pivot']['qty'],
           'discount' => $product['pivot']['discount'],
-          'total' => $product['total']
+          'total' => $total
         ]);
 
         unset($products[array_search($product_id, $productIds)]);
@@ -67,11 +68,14 @@ class OfferController extends ApiController {
 
     // update
     foreach ($products as $product) {
+      $total = floatval($product['price']*$product['pivot']['qty']);
+      $total -= $total*$product['pivot']['discount']/100;
+      
       $model->products()->updateExistingPivot($product['id'], [
         'offer_id' => $model->id,
         'qty' => $product['pivot']['qty'],
         'discount' => $product['pivot']['discount'],
-        'total' => $product['total']
+        'total' => $total
       ]);
     }
 
@@ -89,21 +93,30 @@ class OfferController extends ApiController {
     foreach ($r->input('products') as $product) {
       $model->products()->attach($product['id'], [
         'offer_id' => $model->id,
-        'qty' => $product['qty'],
-        'discount' => $product['discount']
+        'qty' => $product['pivot']['qty'],
+        'discount' => $product['pivot']['discount']
       ]);
     }
 
     if ($model->save()) {
-      return response()->json(['status' => true], 201);
+      return response()->json($model, 201);
     }
-    return response()->json(['status' => false, 'messages' => $model->errors()->getMessages()], 403);
+    return response()->json($model->errors()->getMessages(), 403);
   }
 
   public function generatePdf(int $id) {
 
-    $offer = Offer::where('id', $id)->with(['products'])->first();
-    if (is_null($offer->pdf_generated_at) || $offer->modified_at > $offer->pdf_generated_at) {
+    $offer = Offer::where('id', $id)->with(['products.category'])->first();
+
+    $filename = "$id.pdf";
+    $path = 'd'.storage_path('offer_pdf'.DIRECTORY_SEPARATOR.$filename);
+    if (is_file($path)) {
+      return response(file_get_contents($path), 200, [
+        'Content-Type' => 'application/pdf',
+        'Content-Disposition' => 'inline; filename="' . $filename . '"'
+      ]);
+//    } else if (is_null($offer->pdf_generated_at) || $offer->modified_at > $offer->pdf_generated_at) {
+    } else {
       $offer->update([
         'pdf_generated_at' => \DB::raw('now()')
       ]);
@@ -113,18 +126,8 @@ class OfferController extends ApiController {
         'offer' => $offer
       ])->render());
       if ($pdf->save(storage_path('offer_pdf') . DIRECTORY_SEPARATOR . $id . '.pdf')) {
-//      $output = $pdf->output();
-//      return 'data:application/pdf;base64,'.base64_encode($output);
         return $pdf->stream();
       }
-    } else {
-      $filename = "$id.pdf";
-      $path = storage_path('offer_pdf'.DIRECTORY_SEPARATOR.$filename);
-
-      return response(file_get_contents($path), 200, [
-        'Content-Type' => 'application/pdf',
-        'Content-Disposition' => 'inline; filename="'.$filename.'"'
-      ]);
     }
     return response()->json(['status' => false], 403);
   }

@@ -20,7 +20,7 @@ class CreateOffersTable extends Migration
             $table->decimal('subtotal_discount');
             $table->decimal('subtotal_vat');
             $table->decimal('total');
-            $table->timestamp('pdf_generated_at');
+            $table->dateTime('pdf_generated_at')->nullable();
             $table->timestamps();
         });
 
